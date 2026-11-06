@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ThinkingBlock Demo</title>
+
+  <!-- React 18 UMD -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <link rel="stylesheet" href="ThinkingBlock.css" />
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #111;
+    }
+    h1 { font-size: 22px; }
+    .demo-section {
+      margin: 32px 0;
+      padding: 16px;
+      border: 1px dashed #e5e7eb;
+      border-radius: 8px;
+    }
+    .demo-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ThinkingBlock Demo</h1>
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ===== 组件源码(嵌入,不依赖打包)=====
+    function ThinkingBlock({ thinking, duration, model, isStreaming, defaultOpen }) {
+      const [isOpen, setIsOpen] = useState(defaultOpen);
+      const [displayedText, setDisplayedText] = useState(thinking || '');
+
+      useEffect(() => {
+        if (!isStreaming) { setDisplayedText(thinking); return; }
+        let i = 0;
+        setDisplayedText('');
+        const timer = setInterval(() => {
+          i++;
+          setDisplayedText(thinking.slice(0, i));
+          if (i >= thinking.length) clearInterval(timer);
+        }, 12);
+        return () => clearInterval(timer);
+      }, [thinking, isStreaming]);
+
+      if (!thinking && !isStreaming) return null;
+
+      return (
+        <div className={`thinking-block ${isOpen ? 'open' : ''} ${isStreaming ? 'streaming' : ''}`}>
+          <button className="thinking-header" onClick={() => setIsOpen(!isOpen)}>
+            <span className="thinking-icon">
+              {isStreaming ? <span className="thinking-spinner" /> : '🤔'}
+            </span>
+            <span className="thinking-title">
+              {isStreaming ? '正在思考...' : '思考过程'}
+              {duration != null && !isStreaming && (
+                <span className="thinking-duration">({duration}s)</span>
+              )}
+              {model && <span className="thinking-model">{model}</span>}
+            </span>
+            <span className={`thinking-arrow ${isOpen ? 'rotated' : ''}`}>▾</span>
+          </button>
+          <div className="thinking-content-wrapper" style={{ maxHeight: isOpen ? '400px' : '0' }}>
+            <div className="thinking-content">
+              {displayedText}
+              {isStreaming && <span className="thinking-cursor">▍</span>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===== Demo 用例 =====
+    const SAMPLE_THINKING = `用户问的是"自我迭代",我需要:
+1. 先给一个清晰的定义,避免空泛
+2. 拆成可操作的步骤
+3. 用表格/列表提升可读性
+4. 最后给一个反直觉点收尾
+
+考虑到用户可能是在问个人发展,而不是系统/软件迭代,我应该往个人成长方向倾斜。
+
+关键 insight:
+- 自我迭代的瓶颈不是能力,是"不知道自己不知道"
+- 所以优先级:承认盲区 > 学新东西 > 应用旧东西
+
+让我先给结论,再讲逻辑。`;
+
+    function App() {
+      const [streaming, setStreaming] = useState(false);
+      const [partial, setPartial] = useState('');
+
+      // 模拟流式输出
+      const startStream = () => {
+        setStreaming(true);
+        setPartial('');
+        let i = 0;
+        const timer = setInterval(() => {
+          i++;
+          setPartial(SAMPLE_THINKING.slice(0, i * 3));
+          if (i * 3 >= SAMPLE_THINKING.length) {
+            clearInterval(timer);
+            setStreaming(false);
+          }
+        }, 40);
+      };
+
+      return (
+        <div>
+          <div className="demo-section">
+            <div className="demo-label">用例 1:基础用法(已完成的思考过程,默认折叠)</div>
+            <ThinkingBlock
+              thinking={SAMPLE_THINKING}
+              duration={12.3}
+              model="Claude Opus 4"
+            />
+          </div>
+
+          <div className="demo-section">
+            <div className="demo-label">用例 2:流式输出(模拟逐字打字)</div>
+            <button
+              onClick={startStream}
+              disabled={streaming}
+              style={{ padding: '6px 12px', marginBottom: '12px', cursor: 'pointer' }}
+            >
+              {streaming ? '生成中...' : '▶ 触发流式思考'}
+            </button>
+            <ThinkingBlock thinking={partial} isStreaming={streaming} model="DeepSeek-R1" />
+          </div>
+
+          <div className="demo-section">
+            <div className="demo-label">用例 3:默认展开</div>
+            <ThinkingBlock
+              thinking="简短思考:用户想要一个默认折叠的交互,我直接给方案。"
+              duration={2.1}
+              defaultOpen
+            />
+          </div>
+
+          <div className="demo-section">
+            <div className="demo-label">用例 4:极简(只有文本,无时长/模型)</div>
+            <ThinkingBlock thinking="嗯..." />
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

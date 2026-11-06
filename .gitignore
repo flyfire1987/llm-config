@@ -1,0 +1,40 @@
+# ── 运行时与缓存 ──
+__pycache__/
+*.pyc
+*.log
+nohup.out
+
+# ── 数据与状态（不入库）──
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+state/
+data/
+memory/
+memory-flip/
+logs/
+output/
+media/
+
+# ── 密钥与本地配置 ──
+.env
+.env.*
+*.key
+*.pem
+secrets/
+config.local.*
+openclaw-workspace-state.json
+
+# ── 备份与临时 ──
+*.bak
+*.bak-*
+*.tmp
+tmp_*
+debug_scan*.py
+test_tencent.py
+
+# ── 编辑器 / 系统 ──
+.vscode/
+.idea/
+.DS_Store

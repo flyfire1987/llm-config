@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>正则工具 - 小学刷题神器</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+        background: #f5f7fb;
+        min-height: 100vh;
+        padding: 12px;
+        color: #333;
+    }
+    .panel {
+        background: white;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .panel h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #444;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .panel.purple h3 { color: #7c3aed; }
+    .panel.blue   h3 { color: #2563eb; }
+
+    /* AI 输入 */
+    .ai-row { display: flex; gap: 8px; }
+    .ai-row input {
+        flex: 1;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    .ai-row input:focus { border-color: #7c3aed; }
+    .ai-row button {
+        padding: 10px 18px;
+        background: linear-gradient(135deg, #7c3aed, #a855f7);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .ai-row button:hover:not(:disabled) { opacity: 0.9; }
+    .ai-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #aiStatus {
+        font-size: 12px;
+        margin-top: 6px;
+        min-height: 16px;
+        color: #666;
+    }
+
+    /* 正则输入 */
+    .regex-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: 'JetBrains Mono', 'Menlo', monospace;
+    }
+    .regex-row .slash { color: #999; font-size: 16px; }
+    .regex-row input {
+        flex: 1;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', 'Menlo', monospace;
+        font-size: 14px;
+        outline: none;
+    }
+    .regex-row input:focus { border-color: #2563eb; }
+    .regex-row .flags {
+        width: 70px;
+        text-align: center;
+    }
+    #errorMsg {
+        font-size: 12px;
+        color: #dc2626;
+        margin-top: 6px;
+        min-height: 16px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* 双栏 */
+    .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    @media (max-width: 720px) {
+        .grid { grid-template-columns: 1fr; }
+    }
+    textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', 'Menlo', monospace;
+        font-size: 13px;
+        resize: vertical;
+        outline: none;
+        line-height: 1.6;
+    }
+    textarea:focus { border-color: #2563eb; }
+
+    /* 高亮区 */
+    #resultHighlight {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        min-height: 280px;
+        max-height: 420px;
+        overflow: auto;
+        font-family: 'JetBrains Mono', 'Menlo', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-all;
+        background: #fafafa;
+    }
+    .match {
+        background: #fde68a;
+        border-radius: 3px;
+        padding: 0 2px;
+        box-shadow: 0 0 0 1px #f59e0b inset;
+    }
+    .g1 { background: #bbf7d0; }
+    .g2 { background: #bae6fd; }
+    .g3 { background: #fbcfe8; }
+    .g4 { background: #fed7aa; }
+
+    /* 详情列表 */
+    #resultList {
+        max-height: 200px;
+        overflow: auto;
+        font-size: 12px;
+    }
+    .match-item {
+        border-left: 3px solid #f59e0b;
+        padding: 6px 8px;
+        margin-bottom: 6px;
+        background: #fffbeb;
+        border-radius: 0 6px 6px 0;
+    }
+    .match-item .head {
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 3px;
+    }
+    .match-item .meta { color: #666; font-size: 11px; }
+    .group-chip {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        margin-right: 4px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .empty { color: #aaa; font-size: 13px; }
+
+    /* 模板按钮 */
+    .templates {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    .tpl-btn {
+        padding: 4px 10px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        color: #475569;
+    }
+    .tpl-btn:hover { background: #e2e8f0; }
+
+    /* 统计 */
+    .stats {
+        display: flex;
+        gap: 16px;
+        font-size: 12px;
+        color: #666;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed #eee;
+    }
+    .stats b { color: #2563eb; }
+</style>
+</head>
+<body>
+
+<!-- 🤖 AI 生成区 -->
+<div class="panel purple">
+    <h3>🤖 自然语言描述（让 AI 帮你写正则）</h3>
+    <div class="ai-row">
+        <input id="aiInput" type="text" placeholder="例：匹配中国大陆手机号、邮箱、URL..." />
+        <button id="aiBtn">✨ 生成</button>
+    </div>
+    <div id="aiStatus"></div>
+    <div class="templates">
+        <span style="font-size:12px;color:#888;line-height:24px;">常用：</span>
+        <button class="tpl-btn" data-desc="中国大陆手机号（11位数字，1开头）">📱 手机号</button>
+        <button class="tpl-btn" data-desc="电子邮箱地址">📧 邮箱</button>
+        <button class="tpl-btn" data-desc="HTTP 或 HTTPS 的 URL">🔗 URL</button>
+        <button class="tpl-btn" data-desc="中国大陆身份证号（18位，最后一位可能是X）">🆔 身份证</button>
+        <button class="tpl-btn" data-desc="IPv4 地址">🌐 IPv4</button>
+        <button class="tpl-btn" data-desc="日期，格式 yyyy-mm-dd">📅 日期</button>
+    </div>
+</div>
+
+<!-- 正则输入 -->
+<div class="panel blue">
+    <h3>🧪 正则表达式</h3>
+    <div class="regex-row">
+        <span class="slash">/</span>
+        <input id="regexInput" type="text" placeholder="\d+" />
+        <span class="slash">/</span>
+        <input id="flagsInput" class="flags" type="text" value="g" title="flags: g i m s u y" />
+    </div>
+    <div id="errorMsg"></div>
+</div>
+
+<!-- 双栏 -->
+<div class="grid">
+    <div class="panel">
+        <h3>📝 测试文本</h3>
+        <textarea id="textInput" rows="14" placeholder="粘贴或输入测试文本..."></textarea>
+    </div>
+    <div class="panel">
+        <h3>✨ 匹配结果</h3>
+        <div id="resultHighlight"></div>
+        <div class="stats">
+            <span>匹配：<b id="statCount">0</b></span>
+            <span>耗时：<b id="statTime">0</b> ms</span>
+            <span>文本：<b id="statLen">0</b> 字符</span>
+        </div>
+        <h3 style="margin-top:12px;">📋 捕获组详情</h3>
+        <div id="resultList"></div>
+    </div>
+</div>
+
+<script>
+// ========== MiniMax 配置 ==========
+const MINIMAX_CONFIG = {
+    baseURL: 'https://api.minimaxi.com/v1',
+    apiKey: 'YOUR_MINIMAX_API_KEY',      // ⚠️ 部署时改成你的 key
+    model: 'MiniMax-Text-01'
+};
+
+// ========== DOM ==========
+const $regex   = document.getElementById('regexInput');
+const $flags   = document.getElementById('flagsInput');
+const $text    = document.getElementById('textInput');
+const $err     = document.getElementById('errorMsg');
+const $hl      = document.getElementById('resultHighlight');
+const $list    = document.getElementById('resultList');
+const $statC   = document.getElementById('statCount');
+const $statT   = document.getElementById('statTime');
+const $statL   = document.getElementById('statLen');
+
+const $aiInput  = document.getElementById('aiInput');
+const $aiBtn    = document.getElementById('aiBtn');
+const $aiStatus = document.getElementById('aiStatus');
+
+// ========== 工具函数 ==========
+function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
+
+function lineCol(text, idx) {
+    const before = text.slice(0, idx);
+    const line = before.split('\n').length;
+    const col  = idx - (before.lastIndexOf('\n') + 1) + 1;
+    return { line, col };
+}
+
+// ========== 核心匹配 ==========
+function runMatch() {
+    $err.textContent = '';
+    const pattern = $regex.value;
+    const flags   = $flags.value;
+    const text    = $text.value;
+
+    $statL.textContent = text.length;
+
+    if (!pattern) {
+        $hl.innerHTML = esc(text) || '<span class="empty">（等待输入正则）</span>';
+        $list.innerHTML = '';
+        $statC.textContent = '0';
+        $statT.textContent = '0';
+        return;
+    }
+
+    // 补 g
+    const f = flags.includes('g') ? flags : flags + 'g';
+
+    let re;
+    try {
+        re = new RegExp(pattern, f);
+    } catch (e) {
+        $err.textContent = '❌ ' + e.message;
+        $hl.innerHTML = esc(text);
+        $list.innerHTML = '';
+        $statC.textContent = '0';
+        return;
+    }
+
+    const t0 = performance.now();
+
+    // 收集匹配
+    const matches = [];
+    let m, guard = 0;
+    while ((m = re.exec(text)) !== null) {
+        matches.push({
+            match: m[0],
+            groups: m.slice(1),
+            index: m.index,
+            named: m.groups || {}
+        });
+        if (m[0].length === 0) re.lastIndex++;
+        if (++guard > 10000) break;  // 防爆
+    }
+
+    // 高亮（带组染色）
+    let html = '';
+    let last = 0;
+    matches.forEach(m => {
+        html += esc(text.slice(last, m.index));
+        let body = esc(m.match);
+        // 给每个捕获组单独染色（按组在原串中的位置）
+        if (m.groups.some(g => g !== undefined)) {
+            const reMatch = new RegExp(pattern, f.replace('g', ''));
+            // 直接用 group 顺序拼接
+            let pieces = [];
+            let cursor = m.index;
+            let local;
+            const localRe = new RegExp(pattern, f.replace('g', ''));
+            localRe.lastIndex = m.index;
+            // 简化：直接重组成 [match0, group1, group2, ...]
+            pieces.push({ val: m.match, cls: '' });
+            m.groups.forEach((g, i) => {
+                if (g !== undefined) {
+                    pieces.push({ val: g, cls: 'g' + ((i % 4) + 1) });
+                }
+            });
+            body = pieces.map(p =>
+                p.cls ? `<span class="${p.cls}">${esc(p.val)}</span>` : esc(p.val)
+            ).join('');
+        }
+        html += `<span class="match">${body}</span>`;
+        last = m.index + m.match.length;
+    });
+    html += esc(text.slice(last));
+    $hl.innerHTML = html || '<span class="empty">（无匹配）</span>';
+
+    // 详情
+    $statC.textContent = matches.length;
+    $statT.textContent = (performance.now() - t0).toFixed(1);
+
+    if (matches.length === 0) {
+        $list.innerHTML = '<div class="empty">无匹配</div>';
+    } else {
+        $list.innerHTML = matches.slice(0, 200).map((m, i) => {
+            const { line, col } = lineCol(text, m.index);
+            const chips = m.groups.map((g, j) =>
+                g !== undefined
+                    ? `<span class="group-chip g${(j % 4) + 1}">$${j+1}: ${esc(g)}</span>`
+                    : ''
+            ).filter(Boolean).join('');
+            const named = Object.entries(m.named).map(([k, v]) =>
+                `<span class="group-chip g1">${esc(k)}: ${esc(v)}</span>`
+            ).join('');
+            return `<div class="match-item">
+                <div class="head">#${i+1} ${esc(m.match)}</div>
+                <div class="meta">@ L${line}:C${col} · idx ${m.index} · len ${m.match.length}</div>
+                ${chips ? `<div style="margin-top:3px;">${chips}</div>` : ''}
+                ${named ? `<div style="margin-top:3px;">${named}</div>` : ''}
+            </div>`;
+        }).join('') + (matches.length > 200
+            ? `<div class="empty" style="margin-top:6px;">... 还有 ${matches.length - 200} 条未显示</div>`
+            : '');
+    }
+}
+
+[$regex, $flags, $text].forEach(el => el.addEventListener('input', runMatch));
+
+// ========== 🤖 AI 生成 ==========
+const SYS = `你是正则表达式专家。用户会用自然语言描述想要匹配的内容。
+严格按以下 JSON 格式返回（不要 markdown 代码块、不要多余文字）：
+{"regex":"完整的正则表达式","flags":"gi 或 g 或空字符串","explain":"一句中文解释"}
+
+要求：
+1. 正则要准确健壮，处理常见边界
+2. 优先用非贪婪、关键边界加 \\b
+3. flags 默认包含 g（需要忽略大小写则加 i）
+4. 只返回 JSON`;
+
+async function generateRegex() {
+    const desc = $aiInput.value.trim();
+    if (!desc) { $aiInput.focus(); return; }
+
+    $aiBtn.disabled = true;
+    $aiStatus.style.color = '#7c3aed';
+    $aiStatus.textContent = '🤔 AI 思考中...';
+
+    try {
+        const resp = await fetch(MINIMAX_CONFIG.baseURL + '/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': '***' + MINIMAX_CONFIG.apiKey
+            },
+            body: JSON.stringify({
+                model: MINIMAX_CONFIG.model,
+                messages: [
+                    { role: 'system', content: SYS },
+                    { role: 'user', content: desc }
+                ],
+                temperature: 0.2,
+                response_format: { type: 'json_object' }
+            })
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + (await resp.text()).slice(0, 200));
+
+        const data = await resp.json();
+        const content = data.choices?.[0]?.message?.content || '';
+        let r;
+        try { r = JSON.parse(content); }
+        catch {
+            const m = content.match(/\{[\s\S]*\}/);
+            if (m) r = JSON.parse(m[0]);
+            else throw new Error('AI 返回非 JSON：' + content.slice(0, 100));
+        }
+
+        $regex.value = r.regex;
+        $flags.value = r.flags || 'g';
+        runMatch();
+
+        $aiStatus.style.color = '#059669';
+        $aiStatus.textContent = '✅ ' + (r.explain || '已生成');
+    } catch (e) {
+        $aiStatus.style.color = '#dc2626';
+        $aiStatus.textContent = '❌ ' + e.message;
+    } finally {
+        $aiBtn.disabled = false;
+    }
+}
+
+$aiBtn.addEventListener('click', generateRegex);
+$aiInput.addEventListener('keydown', e => { if (e.key === 'Enter') generateRegex(); });
+
+// 模板按钮
+document.querySelectorAll('.tpl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        $aiInput.value = btn.dataset.desc;
+        generateRegex();
+    });
+});
+
+// 默认示例
+$text.value = '联系方式：手机 13812345678 / 13987654321，邮箱 test@example.com 与 abc@school.edu';
+$regex.value = '\\b1[3-9]\\d{9}\\b';
+runMatch();
+</script>
+</body>
+</html>

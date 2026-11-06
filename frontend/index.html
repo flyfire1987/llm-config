@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Chat</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+  <link rel="stylesheet" href="/assets/chat.css" />
+  <style>.brand-logo { width: 26px; height: 26px; border-radius: 6px; object-fit: cover; vertical-align: middle; margin-right: 8px; }</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <h2>会话</h2>
+      <button id="new-chat-btn" title="新建会话">+</button>
+    </div>
+    <div id="sessionList"></div>
+    <hr class="sidebar-divider">
+    <div id="usage-panel">
+      <div class="usage-row">
+        <span class="usage-label">5h 额度</span>
+        <span id="usage-quota">--</span>
+      </div>
+      <div class="usage-row">
+        <span class="usage-label">已用</span>
+        <span id="usage-used">--</span>
+      </div>
+      <div class="usage-row">
+        <span class="usage-label">剩余</span>
+        <span id="usage-remaining-pct">--%</span>
+      </div>
+      <div class="usage-bar"><div id="usage-bar-fill"></div></div>
+      <div class="usage-row usage-meta">
+        <span id="usage-next-reset">--</span>
+      </div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <header id="chat-header">
+      <img class="brand-logo" src="/assets/logo.png" alt="" />
+      <span id="current-title">新会话</span>
+    </header>
+    <section id="messages"></section>
+
+    <footer id="input-bar">
+      <button id="attach-btn" title="添加图片" type="button">📎</button>
+      <div
+        id="input"
+        class="input-editor"
+        contenteditable="true"
+        role="textbox"
+        aria-multiline="true"
+        data-placeholder="输入消息... Enter发送, Shift+Enter换行"
+      ></div>
+      <input id="file-input" type="file" accept="image/*" multiple hidden />
+      <button id="send-btn" type="button">发送</button>
+    </footer>
+  </main>
+
+  <script src="/assets/chat.js"></script>
+</body>
+</html>
